@@ -1,4 +1,5 @@
 import tkinter as tk
+import re
 
 #class for main window
 class window(tk.Tk):
@@ -8,6 +9,9 @@ class window(tk.Tk):
 
         #placeholder variables for left bar functions
         self.display_locked = False
+        self.width = 1
+        self.line_type = tk.StringVar()
+        self.line_type.set('line')
 
         #add a title
         self.wm_title('THE(TM) HyperSpy Analysis')
@@ -53,6 +57,20 @@ class window(tk.Tk):
     #make a function for saving files
     def save_file(self):
         print('Save')
+
+    #functions for setting constant variables
+    def set_width(self, event:tk.Event, entry:tk.Entry):
+
+        #remove letters
+        num = re.sub("[^0-9]", "", entry.get())
+        #set width
+        if num == '' or num == '0':
+            num = '1'
+        self.width = int(num)
+        #update entry
+        entry.delete(0, tk.END)
+        entry.insert(0, num)
+    
 
     #temporary placeholders for buttons in the left bar
     #TODO: figure out what to do with functions
@@ -126,6 +144,45 @@ class Analysis2D(tk.Frame):
         parent.lb_pack(self.maps)
         self.overlay = tk.Button(master=self, text="Overlay Maps", command= main.show_overlay, state='disabled')
         parent.lb_pack(self.overlay)
+        #add attributes for changing width and line type
+        #width
+        frm_width = tk.Frame(self)
+        lbl_width = tk.Label(frm_width, text='Line Weight: ')
+        parent.lb_pack(lbl_width)
+        ent_width = tk.Entry(frm_width, state='disabled')
+        parent.lb_pack(ent_width)
+        ent_width.bind('<KeyRelease>', lambda event: main.set_width(event, ent_width))
+        parent.lb_pack(frm_width)
+        #type of line
+        frm_type = tk.Frame(self)
+        lbl_width = tk.Label(frm_type, text='Shape Type: ')
+        parent.lb_pack(lbl_width)
+        #TODO: attempt turning into a dictionary
+        option = [Line, Rectangle, Oval, Polygon]
+        drop_down = tk.OptionMenu(frm_type, main.line_type, *option)
+        parent.lb_pack(drop_down)
+        parent.lb_pack(frm_type)
+
+        
+
+
+#types of lines to draw
+class Line():
+    #intitialize
+    def __init__(self):
+        print('line')
+class Rectangle():
+    #intitialize
+    def __init__(self):
+        print('line')
+class Oval():
+    #intitialize
+    def __init__(self):
+        print('line')
+class Polygon():
+    #intitialize
+    def __init__(self):
+        print('line')
 
 #run the program
 if __name__ == '__main__':
