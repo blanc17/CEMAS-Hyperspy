@@ -1,5 +1,16 @@
 import tkinter as tk
 import re
+from hyperspy.misc.elements import elements as elements_db
+import tkinter.font as font
+
+#important properties
+disabled_elements = [
+    'Li','Lr', 'Rf','Db','Sg','Bh','Hs','Mt','Ds','Rg','Cn','Uut',
+    'Fl','Uup','Lv','Uus','Uuo','Np','Pu','Am','Cm','Bk','Cf','Es',
+    'Fm','Md','No'
+]
+# buttonFont = font.Font(size=7)
+
 
 #class for main window
 class window(tk.Tk):
@@ -30,6 +41,10 @@ class window(tk.Tk):
         #create usable frames
         self.left_bar = LeftBar(frm_main, self)
         self.left_bar.pack(side='left', fill='y', expand=False)
+        self.canvas = Canvas(frm_main, self)
+        self.canvas.pack(side='top', fill='both', expand=True)
+        self.elements = PeriodicTable(frm_bottom, self)
+        self.elements.pack(side='left', fill='none', expand=False)
 
 
     #make a menu for the top bar
@@ -112,7 +127,81 @@ class LeftBar(tk.Frame):
 
     def lb_pack(self, button:tk.Button):
         button.pack(side='top', fill='x', expand=False, padx=5, pady=5)
- 
+class Canvas(tk.Frame):
+    #initialize
+    def __init__(self, parent:tk.Frame, main:window):
+        tk.Frame.__init__(self, parent)
+        #add the canvas and scrollbars
+        canvas = tk.Canvas(self, bg='white')
+        scroll_y = tk.Scrollbar(self, orient='vertical', command=canvas.yview)
+        scroll_x = tk.Scrollbar(self, orient='horizontal', command=canvas.xview)
+        #add the final frame
+        self.frame = tk.Frame(canvas)
+        self.format(canvas, scroll_x, scroll_y)
+    #format the scroll bars and canvases
+    def format(self, canvas:tk.Canvas, x:tk.Scrollbar, y:tk.Scrollbar):
+        #bind the scrolling
+        self.bind(
+            '<Configure>',
+            lambda e: canvas.configure(
+                scrollregion=canvas.bbox('all')
+            )
+        )
+        canvas.create_window((0,0), window=self.frame, anchor='nw')
+        canvas.configure(yscrollcommand=y.set)
+        canvas.configure(xscrollcommand=x.set)
+
+        #bind scrolling to mouse wheel
+        def on_mousewheel(event):
+            scroll_num = int(-1*(event.delta/120))
+            canvas.yview_scroll(scroll_num, 'units')
+            return
+        canvas.bind_all('<MouseWheel>', on_mousewheel)
+
+        #pack everything
+        x.pack(side='bottom', fill='x', expand=False)
+        canvas.pack(side='left', fill='both', expand=True)
+        y.pack(side='right', fill='y', expand=False)
+class PeriodicTable(tk.Frame):
+    #initialize
+    def __init__(self, parent:tk.Frame, main:window):
+        tk.Frame.__init__(self, parent)
+        #element array
+        elements = [
+            ['H','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','He'],
+            ['Li','Be','0','0','0','0','0','0','0','0','0','0','B','C','N','O','F','Ne'],
+            ['Na','Mg','0','0','0','0','0','0','0','0','0','0','Al','Si','P','S','Cl','Ar'],
+            ['K','Ca','Sc','Ti','V','Cr','Mn','Fe','Co','Ni','Cu','Zn','Ga','Ge','As','Se','Br','Kr'],
+            ['Rb','Sr','Y','Zr','Nb','Mo','Tc','Ru','Rh','Pd','Ag','Cd','In','Sn','Sb','Te','I','Xe'],
+            ['Cs','Ba','Lu','Hf','Ta','W','Re','Os','Ir','Pt','Au','Hg','Tl','Pb','Bi','Po','At','Rn'],
+            ['Fr','Ra','Lr','Rf','Db','Sg','Bh','Hs','Mt','Ds','Rg','Cn','Uut','Fl','Uup','Lv','Uus','Uuo'],
+            ['0','0','La','Ce','Pr','Nd','Pm','Sm','Eu','Gd','Tb','Dy','Ho','Er','Tm','Yb','0','0'],
+            ['0','0','Ac','Th','Pa','U','Np','Pu','Am','Cm','Bk','Cf','Es','Fm','Md','No','0','0']
+        ]
+        #color array
+        self.colors = ['Greys', 'Purples', 'Blues',
+               'Greens', 'Oranges', 'Reds']
+
+        self.elements = {}
+        self.add_elements(elements)
+    
+    def add_elements(self, elements:list):
+
+        i = 0
+
+        #add all elements to the table
+        for r in range(len(elements)):
+            for c in range(len(elements[r])):
+                element = elements[r][c]
+                #if the element exists
+                if element != '0':
+                    color = self.colors[i]
+
+                    #make an element
+                    self.elements[element] = Element(element, r, c, color, self)
+                    self.elements[element].grid(row=r, column=c, sticky='nesw')
+
+    
 #Classes for left bar functions
 class Lines(tk.Frame):
     #initialize
@@ -163,7 +252,54 @@ class Analysis2D(tk.Frame):
         parent.lb_pack(drop_down)
         parent.lb_pack(frm_type)
 
+#class for elements
+class Element(tk.Button):
+    #initialize
+    def __init__(self, name:str, r:int, c:int, color:str, frame:tk.Frame):
+        #make the button
+        tk.Button.__init__(self, frame, text = name, font=font.Font(size=8), state='normal', command= self.pressed)
+
+        self.name = name
+        self.lines = []
+        if self.name not in disabled_elements:
+            for line in elements_db[self.name]['Atomic_properties']['Xray_lines']:
+                #append the line
+                self.lines.append(Element_Line(line, color, name))
         
+        self.shell = tk.BooleanVar()
+        self.shell.set(False)
+
+        #bind functions to the button
+        self.bind('<Enter>', self.roll_over)
+        self.bind('<Leave>', self.leave)
+        self.bind('<Button-3>', self.right_click)
+
+    #TODO: create all button functions
+    #the button has been pressed
+    def pressed(self):
+        print('pressed')
+    def roll_over(self, event):
+        print('mouse over')
+    def leave(self, event):
+        print('leave button')
+    def right_click(self, event):
+        print('right click')
+#class for lines
+class Element_Line():
+    #initialize
+    def __init__(self, line:str, color:str, name:str):
+        #name of line
+        self.name = line
+        self.full_name = name+'_'+line
+        #if the line appears in TEM
+        self.bool = tk.BooleanVar()
+        self.bool.set(False)
+        #color
+        self.color = tk.StringVar()
+        self.color.set(color)
+        #if the line is on the map
+        self.map = tk.BooleanVar()
+        self.map.set(False)
 
 
 #types of lines to draw
