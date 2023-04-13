@@ -45,6 +45,8 @@ class window(tk.Tk):
         self.canvas.pack(side='top', fill='both', expand=True)
         self.elements = PeriodicTable(frm_bottom, self)
         self.elements.pack(side='left', fill='none', expand=False)
+        self.output = Output(frm_bottom, self)
+        self.output.pack(side='left', fill='both', expand=True)
 
 
     #make a menu for the top bar
@@ -200,6 +202,24 @@ class PeriodicTable(tk.Frame):
                     #make an element
                     self.elements[element] = Element(element, r, c, color, self)
                     self.elements[element].grid(row=r, column=c, sticky='nesw')
+class Output(tk.Frame):
+    #initialize
+    def __init__(self, parent:tk.Frame, main:window):
+        tk.Frame.__init__(self, parent)
+        #add the text box
+        self.text = tk.Text(self, state='disabled', height=13, wrap=tk.NONE)
+        self.text.pack(side='top', fill='both', expand=False)
+
+        #add scrollbars
+        y = tk.Scrollbar(parent)
+        y.pack(side='right', fill='y', expand=False)
+        self.text.configure(yscrollcommand=y.set)
+        y.configure(command=self.text.yview)
+
+        x = tk.Scrollbar(parent, orient=tk.HORIZONTAL)
+        x.pack(side='bottom', fill='x', expand=False)
+        self.text.configure(xscrollcommand=x.set)
+        x.configure(command=self.text.xview)
 
     
 #Classes for left bar functions
@@ -300,7 +320,6 @@ class Element_Line():
         #if the line is on the map
         self.map = tk.BooleanVar()
         self.map.set(False)
-
 
 #types of lines to draw
 class Line():
